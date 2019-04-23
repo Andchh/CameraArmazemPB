@@ -11,9 +11,13 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.JsonHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 import com.wonderkiln.camerakit.CameraKitError;
 import com.wonderkiln.camerakit.CameraKitEvent;
 import com.wonderkiln.camerakit.CameraKitEventListener;
@@ -22,15 +26,21 @@ import com.wonderkiln.camerakit.CameraKitVideo;
 import com.wonderkiln.camerakit.CameraView;
 
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+
+import cz.msebera.android.httpclient.Header;
 
 
 public class MainActivity extends Activity {
@@ -41,11 +51,19 @@ public class MainActivity extends Activity {
 
     private CameraView cameraView;
 
+    private String lastPicture = null;
+
+    private final static String URL_BASE = "http://10.0.2.2:5000";
+
+    private AsyncHttpClient server;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        server = new AsyncHttpClient();
 
         cameraView = findViewById(R.id.cameraView);
         cameraView.addCameraKitListener(new CameraKitEventListener() {
@@ -62,7 +80,7 @@ public class MainActivity extends Activity {
             @Override
             public void onImage(CameraKitImage cameraKitImage) {
                 //pegar data e usar como nome da imagem
-                SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ROOT);
+                SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy_HH:mm:ss", Locale.ROOT);
                 Date now = new Date();
                 String filename = formatter.format(now) + ".png";
                 File directory = new File("/sdcard/Armazempb/");
@@ -78,7 +96,11 @@ public class MainActivity extends Activity {
                 //salva o uri do bitmap caso precise usar no futuro
                 File finalFile = new File(getRealPathFromURI(tempUri));
 
-                System.out.println(dest.toString());  //dest == path to photo
+                lastPicture = finalFile.toString();
+
+                Log.v("LastPhoto", lastPicture);
+
+                sendFile(finalFile);
 
                 try {
                     FileOutputStream out = new FileOutputStream(dest);
@@ -101,6 +123,7 @@ public class MainActivity extends Activity {
 
 
     }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -116,6 +139,31 @@ public class MainActivity extends Activity {
 
     public void takePicture(View view) {
         cameraView.captureImage();
+
+    }
+
+    private boolean sendFile(File file) {
+
+        RequestParams rp = new RequestParams();
+
+        try {
+            rp.put("image", file);
+            rp.setForceMultipartEntityContentType(true);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        server.post(URL_BASE + "/decode", rp, new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONArray errorResponse) {
+            }
+        });
+
+        return true;
     }
 
     public Uri getImageUri(Context inContext, Bitmap inImage) {
@@ -124,15 +172,17 @@ public class MainActivity extends Activity {
         String path = MediaStore.Images.Media.insertImage(inContext.getContentResolver(), inImage, "Title", null);
         return Uri.parse(path);
     }
+
     public String getRealPathFromURI(Uri uri) {
         Cursor cursor = getContentResolver().query(uri, null, null, null, null);
         cursor.moveToFirst();
         int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
         return cursor.getString(idx);
     }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) { //for retrieve the data
-        if(requestCode==REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
             Bundle extras = data.getExtras(); //pega o intent
             Bitmap bitmap = (Bitmap) extras.get("data");
 
