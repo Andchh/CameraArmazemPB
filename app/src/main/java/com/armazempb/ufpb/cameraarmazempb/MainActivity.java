@@ -1,5 +1,6 @@
 package com.armazempb.ufpb.cameraarmazempb;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -7,13 +8,19 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Camera;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Adapter;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
+import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
@@ -27,6 +34,7 @@ import com.wonderkiln.camerakit.CameraView;
 
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedWriter;
@@ -51,12 +59,15 @@ public class MainActivity extends Activity {
 
     private CameraView cameraView;
 
+    private Spinner spinner;
+
     private String lastPicture = null;
 
-    private final static String URL_BASE = "http://10.0.2.2:5000";
+    private final static String URL_BASE = "http://192.168.0.101:5000";
 
     private AsyncHttpClient server;
 
+    private String itemSelected;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +75,10 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         server = new AsyncHttpClient();
+        server.setTimeout(180 * 1000);
+
+       // File file = new File("/sdcard/Download/ventilador.jpg");
+        //sendFile(file);
 
         cameraView = findViewById(R.id.cameraView);
         cameraView.addCameraKitListener(new CameraKitEventListener() {
@@ -102,6 +117,8 @@ public class MainActivity extends Activity {
 
                 sendFile(finalFile);
 
+                Toast.makeText(getApplicationContext(), "Imagem Enviada", Toast.LENGTH_LONG).show();
+
                 try {
                     FileOutputStream out = new FileOutputStream(dest);
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
@@ -121,7 +138,27 @@ public class MainActivity extends Activity {
 
         //myImageView = findViewById(R.id.CameraImage);
 
+        spinner = findViewById(R.id.spinner);
 
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter
+                .createFromResource(this,
+                        R.array.spinner,
+                        android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        spinner.setAdapter(adapter);
+
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                itemSelected = adapterView.getItemAtPosition(i).toString();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
     }
 
     @Override
@@ -147,6 +184,7 @@ public class MainActivity extends Activity {
         RequestParams rp = new RequestParams();
 
         try {
+            rp.put("true_classe", itemSelected);
             rp.put("image", file);
             rp.setForceMultipartEntityContentType(true);
         } catch (FileNotFoundException e) {
@@ -156,6 +194,14 @@ public class MainActivity extends Activity {
         server.post(URL_BASE + "/decode", rp, new JsonHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                Log.v("response API", response.toString());
+                String respon = "";
+                try {
+                    respon = response.getString("predicted");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                Toast.makeText(MainActivity.super.getApplicationContext(), respon, Toast.LENGTH_LONG).show();
             }
 
             @Override

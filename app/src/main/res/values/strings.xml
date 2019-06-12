@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">CameraArmazemPB</string>
     <string name="tirar_foto">Tirar Foto</string>
+    <string-array name="spinner">
+        <item>Ventilador</item>
+        <item>Liquidificador</item>
+        <item>Celular</item>
+    </string-array>
 </resources>
