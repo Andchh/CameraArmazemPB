@@ -63,9 +63,13 @@ public class MainActivity extends Activity {
 
     private String lastPicture = null;
 
-    private final static String URL_BASE = "http://192.168.0.101:5000";
+    private final static String URL_BASE = "http://192.168.0.101";
 
-    private AsyncHttpClient server;
+    private final static int PORT = 5000;
+
+    private final static int TIMEOUT = 180 * 1000;
+
+    private CommunicationWithAPI communication;
 
     private String itemSelected;
 
@@ -74,8 +78,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        server = new AsyncHttpClient();
-        server.setTimeout(180 * 1000);
+        communication = new CommunicationWithOlhoDeCalangoAPI(URL_BASE, PORT, TIMEOUT);
 
        // File file = new File("/sdcard/Download/ventilador.jpg");
         //sendFile(file);
@@ -115,7 +118,7 @@ public class MainActivity extends Activity {
 
                 Log.v("LastPhoto", lastPicture);
 
-                sendFile(finalFile);
+                communication.sendFile(finalFile);
 
                 Toast.makeText(getApplicationContext(), "Imagem Enviada", Toast.LENGTH_LONG).show();
 
@@ -177,39 +180,6 @@ public class MainActivity extends Activity {
     public void takePicture(View view) {
         cameraView.captureImage();
 
-    }
-
-    private boolean sendFile(File file) {
-
-        RequestParams rp = new RequestParams();
-
-        try {
-            rp.put("true_classe", itemSelected);
-            rp.put("image", file);
-            rp.setForceMultipartEntityContentType(true);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        server.post(URL_BASE + "/decode", rp, new JsonHttpResponseHandler() {
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                Log.v("response API", response.toString());
-                String respon = "";
-                try {
-                    respon = response.getString("predicted");
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                Toast.makeText(MainActivity.super.getApplicationContext(), respon, Toast.LENGTH_LONG).show();
-            }
-
-            @Override
-            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONArray errorResponse) {
-            }
-        });
-
-        return true;
     }
 
     public Uri getImageUri(Context inContext, Bitmap inImage) {
