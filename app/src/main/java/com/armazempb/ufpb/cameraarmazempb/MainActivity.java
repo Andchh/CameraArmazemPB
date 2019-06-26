@@ -107,7 +107,8 @@ public class MainActivity extends Activity {
                 File dest = new File(directory, filename);
 
                 Bitmap bitmap = cameraKitImage.getBitmap();
-                bitmap = Bitmap.createScaledBitmap(bitmap, INPUT_SIZE, INPUT_SIZE, false);
+                bitmap = Bitmap.createScaledBitmap(bitmap, 2*INPUT_SIZE, 2*INPUT_SIZE, false);
+                bitmap = Bitmap.createBitmap(bitmap, 122,122,244,244);
 
                 //pega o URI do bitmap
                 Uri tempUri = getImageUri(getApplicationContext(), bitmap);

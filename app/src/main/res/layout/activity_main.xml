@@ -9,7 +9,6 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
-
     <!--ImageView
         android:id="@+id/CameraImage"
         android:layout_width="224dp"
@@ -17,13 +16,29 @@
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="55dp"
         android:src="@mipmap/ic_launcher" /-->
-    <com.wonderkiln.camerakit.CameraView
-        android:id="@+id/cameraView"
-        android:layout_width="match_parent"
-        android:layout_height="447dp"
-        android:layout_gravity="center|top"
-        android:keepScreenOn="true" />
 
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <com.wonderkiln.camerakit.CameraView
+            android:id="@+id/cameraView"
+            android:layout_width="match_parent"
+            android:layout_height="447dp"
+            android:layout_gravity="center|top"
+            android:keepScreenOn="true">
+
+        </com.wonderkiln.camerakit.CameraView>
+
+        <View
+            android:layout_width="244dp"
+            android:layout_height="244dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="100dp"
+            android:background="@drawable/rect_camera" />
+
+    </FrameLayout>
 
     <Button
 
